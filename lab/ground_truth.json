@@ -1,0 +1,182 @@
+{
+  "_comment": "Ground truth list curated from documented OWASP Juice Shop and DVWA vulnerability challenges. is_vulnerable=true are verified exploitable lab flaws; is_vulnerable=false are scanner false positives / non-exploitable endpoints; needs_review=true flags ambiguous scanner alerts.",
+  "findings": [
+    {
+      "path": "/rest/products/search",
+      "param": "q",
+      "cwe": 89,
+      "is_vulnerable": true,
+      "description": "SQL Injection in SQLite product search (Database Schema / User Credentials challenges)"
+    },
+    {
+      "path": "/rest/products/search",
+      "param": "q",
+      "cwe": 79,
+      "is_vulnerable": true,
+      "description": "Reflected / DOM XSS in search query (DOM XSS challenge)"
+    },
+    {
+      "path": "/#/search",
+      "param": "q",
+      "cwe": 79,
+      "is_vulnerable": true,
+      "description": "Angular SPA client-side DOM XSS route"
+    },
+    {
+      "path": "/rest/user/login",
+      "param": "email",
+      "cwe": 89,
+      "is_vulnerable": true,
+      "description": "SQL Injection in login authentication (Login Admin challenge)"
+    },
+    {
+      "path": "/rest/basket",
+      "param": "id",
+      "cwe": 639,
+      "is_vulnerable": true,
+      "description": "IDOR / BOLA horizontal privilege escalation reading arbitrary user baskets (View Basket challenge)"
+    },
+    {
+      "path": "/rest/basket/7",
+      "param": "id",
+      "cwe": 639,
+      "is_vulnerable": true,
+      "description": "IDOR / BOLA horizontal privilege escalation reading User B basket 7"
+    },
+    {
+      "path": "/profile/image/url",
+      "param": "imageUrl",
+      "cwe": 918,
+      "is_vulnerable": true,
+      "description": "SSRF via profile image URL upload to internal/external networks (SSRF challenge)"
+    },
+    {
+      "path": "/vulnerabilities/sqli_blind/",
+      "param": "id",
+      "cwe": 89,
+      "is_vulnerable": true,
+      "description": "DVWA Blind SQL Injection on id parameter via MySQL SLEEP"
+    },
+    {
+      "path": "/api/Users",
+      "param": "email",
+      "cwe": 89,
+      "is_vulnerable": false,
+      "description": "User registration uses parameterized Sequelize ORM queries; SQLi payload in email does not execute"
+    },
+    {
+      "path": "/api/BasketItems",
+      "param": "id",
+      "cwe": 89,
+      "is_vulnerable": false,
+      "description": "Basket items management uses parameterized Sequelize ORM queries"
+    },
+    {
+      "path": "/api/Addresss",
+      "param": "id",
+      "cwe": 639,
+      "is_vulnerable": false,
+      "description": "Address retrieval enforces authorization via security.isAuthorized() and returns HTTP 400 on cross-user access"
+    },
+    {
+      "path": "/api/Addresss/7",
+      "param": "id",
+      "cwe": 639,
+      "is_vulnerable": false,
+      "description": "Address 7 retrieval enforces authorization via security.isAuthorized() and returns HTTP 400 on cross-user access"
+    },
+    {
+      "path": "/api/Addresss/8",
+      "param": "id",
+      "cwe": 639,
+      "is_vulnerable": false,
+      "description": "Address 8 retrieval enforces authorization via security.isAuthorized() and returns HTTP 400 on cross-user access"
+    },
+    {
+      "path": "/#/contact",
+      "param": "name",
+      "cwe": 79,
+      "is_vulnerable": false,
+      "description": "Angular contact route properly context-encodes input; no JavaScript execution observed"
+    },
+    {
+      "path": "/rest/track-order/5267-f73dcd6e10f80371",
+      "param": "id",
+      "cwe": 918,
+      "is_vulnerable": false,
+      "description": "Order tracking parameter performs local database query only; does not issue outbound HTTP requests"
+    },
+    {
+      "path": "/rest/user/login",
+      "param": "password",
+      "cwe": 89,
+      "is_vulnerable": false,
+      "description": "Password parameter is hashed after user lookup; not SQL-injectable"
+    },
+    {
+      "path": "/api/Feedbacks",
+      "param": "comment",
+      "cwe": 89,
+      "is_vulnerable": false,
+      "description": "Customer feedback submission uses parameterized Sequelize ORM models"
+    },
+    {
+      "path": "/profile/image/url",
+      "param": null,
+      "cwe": 693,
+      "is_vulnerable": false,
+      "description": "ZAP Rule 10038: Content Security Policy (CSP) header missing on image upload endpoint (missing defense-in-depth header, not exploitable flaw)"
+    },
+    {
+      "path": "/rest/user/login",
+      "param": null,
+      "cwe": 693,
+      "is_vulnerable": false,
+      "description": "ZAP Rule 10038: CSP header missing on login endpoint"
+    },
+    {
+      "path": "/api/Users",
+      "param": null,
+      "cwe": 693,
+      "is_vulnerable": false,
+      "description": "ZAP Rule 10038: CSP header missing on API Users endpoint"
+    },
+    {
+      "path": "/api/Users",
+      "param": null,
+      "cwe": 264,
+      "is_vulnerable": false,
+      "description": "ZAP Rule 10098: Cross-Domain Misconfiguration / CORS header alert on public registration API"
+    },
+    {
+      "path": "/api/Feedbacks",
+      "param": null,
+      "cwe": 264,
+      "is_vulnerable": false,
+      "description": "ZAP Rule 10098: Cross-Domain Misconfiguration / CORS header alert on feedback API"
+    },
+    {
+      "path": "/rest/products/search",
+      "param": null,
+      "cwe": 264,
+      "is_vulnerable": false,
+      "description": "ZAP Rule 10098: CORS header alert on product search"
+    },
+    {
+      "path": "/profile",
+      "param": null,
+      "cwe": 497,
+      "is_vulnerable": false,
+      "needs_review": true,
+      "description": "ZAP Rule 2: Private IP disclosure in profile response header/comments; requires manual verification if considered challenge flaw"
+    },
+    {
+      "path": "/rest/user/login",
+      "param": null,
+      "cwe": 550,
+      "is_vulnerable": false,
+      "needs_review": true,
+      "description": "ZAP Rule 90022: Information disclosure via server/error banner; requires verification against challenge definitions"
+    }
+  ]
+}

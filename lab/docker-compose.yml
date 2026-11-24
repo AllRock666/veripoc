@@ -1,0 +1,36 @@
+# Isolated lab. lab_net is `internal: true` => containers on it have NO internet egress.
+name: pocverifier
+networks:
+  lab_net:
+    name: lab_net
+    internal: true
+services:
+  juiceshop:
+    image: bkimminich/juice-shop
+    container_name: juiceshop
+    networks: [lab_net, default]
+    ports: ["3000:3000"]   # published on host so scanners (ZAP/Nuclei) can reach it
+  db:
+    image: mariadb:10.5
+    container_name: db
+    networks: [lab_net, default]
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: dvwa
+      MYSQL_USER: dvwa
+      MYSQL_PASSWORD: p@ssw0rd
+  dvwa:
+    image: ghcr.io/digininja/dvwa:latest
+    container_name: dvwa
+    networks: [lab_net, default]
+    environment:
+      DB_SERVER: db
+      DEFAULT_SECURITY_LEVEL: low
+    depends_on:
+      - db
+    ports: ["4280:80"]
+  canary:                   # out-of-band callback listener (SSRF oracle)
+    build: ./canary
+    container_name: canary
+    networks: [lab_net, default]   # default network lets the HOST read hits on :9999
+    ports: ["9999:9999"]

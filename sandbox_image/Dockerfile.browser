@@ -1,0 +1,4 @@
+FROM mcr.microsoft.com/playwright/python:v1.46.0-jammy
+RUN pip install --no-cache-dir requests playwright==1.46.0
+USER pwuser
+WORKDIR /work

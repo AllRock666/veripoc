@@ -1,0 +1,114 @@
+[
+  {
+    "source": "zap",
+    "rule_id": "40018",
+    "severity": "high",
+    "url": "http://juiceshop:3000/rest/products/search?q=apple",
+    "method": "GET",
+    "param": "q",
+    "cwe": 89,
+    "vuln_class": "sqli",
+    "raw_evidence": {
+      "evidence": "HTTP/1.1 500 Internal Server Error",
+      "alert": "SQL Injection"
+    }
+  },
+  {
+    "source": "zap",
+    "rule_id": "40012",
+    "severity": "high",
+    "url": "http://juiceshop:3000/#/search?q=test",
+    "method": "GET",
+    "param": "q",
+    "cwe": 79,
+    "vuln_class": "xss",
+    "raw_evidence": {
+      "evidence": "<script>",
+      "alert": "Cross Site Scripting (DOM Based)"
+    }
+  },
+  {
+    "source": "nuclei",
+    "rule_id": "ssrf-profile-image",
+    "severity": "high",
+    "url": "http://juiceshop:3000/profile/image/url",
+    "method": "POST",
+    "param": "imageUrl",
+    "cwe": 918,
+    "vuln_class": "ssrf",
+    "raw_evidence": {
+      "evidence": "HTTP/1.1 200 OK",
+      "alert": "Blind SSRF in Profile Image Upload"
+    }
+  },
+  {
+    "source": "zap",
+    "rule_id": "idor-basket",
+    "severity": "high",
+    "url": "http://juiceshop:3000/rest/basket/7",
+    "method": "GET",
+    "param": "id",
+    "cwe": 639,
+    "vuln_class": "idor",
+    "raw_evidence": {
+      "evidence": "HTTP/1.1 200 OK",
+      "alert": "Insecure Direct Object Reference (IDOR) on Basket"
+    }
+  },
+  {
+    "source": "zap",
+    "rule_id": "40018",
+    "severity": "high",
+    "url": "http://juiceshop:3000/api/Feedbacks?comment=test",
+    "method": "GET",
+    "param": "comment",
+    "cwe": 89,
+    "vuln_class": "sqli",
+    "raw_evidence": {
+      "evidence": "HTTP/1.1 200 OK",
+      "alert": "SQL Injection in Feedback Comment"
+    }
+  },
+  {
+    "source": "zap",
+    "rule_id": "40012",
+    "severity": "high",
+    "url": "http://juiceshop:3000/#/contact?name=test",
+    "method": "GET",
+    "param": "name",
+    "cwe": 79,
+    "vuln_class": "xss",
+    "raw_evidence": {
+      "evidence": "<script>",
+      "alert": "Cross Site Scripting (Reflected) in Contact Form"
+    }
+  },
+  {
+    "source": "nuclei",
+    "rule_id": "ssrf-order-tracking",
+    "severity": "high",
+    "url": "http://juiceshop:3000/rest/track-order/5267-f73dcd6e10f80371",
+    "method": "GET",
+    "param": "id",
+    "cwe": 918,
+    "vuln_class": "ssrf",
+    "raw_evidence": {
+      "evidence": "HTTP/1.1 200 OK",
+      "alert": "Blind SSRF in Order Tracking"
+    }
+  },
+  {
+    "source": "zap",
+    "rule_id": "idor-address",
+    "severity": "high",
+    "url": "http://juiceshop:3000/api/Addresss/8",
+    "method": "GET",
+    "param": "id",
+    "cwe": 639,
+    "vuln_class": "idor",
+    "raw_evidence": {
+      "evidence": "HTTP/1.1 200 OK",
+      "alert": "Insecure Direct Object Reference (IDOR) on Address"
+    }
+  }
+]

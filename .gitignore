@@ -1,0 +1,15 @@
+verifier.db
+results.json
+negative_results.json
+results/
+data/
+phase4_*.json
+phase5_*.json
+negative_findings.json
+lab/credentials.json
+lab/seed_state.json
+*.exe
+*.zip
+__pycache__/
+*.pyc
+.pytest_cache/
