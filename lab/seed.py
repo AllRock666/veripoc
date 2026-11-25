@@ -139,10 +139,12 @@ def seed_juice_shop(
     return result
 
 
-def seed_dvwa(dvwa_url: str = "http://localhost:4280") -> bool:
-    """Initializes DVWA database via setup.php and sets default security to low."""
+def seed_dvwa(dvwa_url: str = "http://localhost:4280") -> dict:
+    """Initializes DVWA database via setup.php, authenticates as admin, and sets security to low."""
     import re, time
     target = dvwa_url.rstrip("/")
+    if "localhost" in target:
+        target = target.replace("localhost", "127.0.0.1")
     s = requests.Session()
     # Retry waiting for DVWA to be up
     for _ in range(15):
@@ -154,38 +156,52 @@ def seed_dvwa(dvwa_url: str = "http://localhost:4280") -> bool:
             time.sleep(1)
 
     try:
+        # 1. Reset database
         r_setup = s.get(f"{target}/setup.php", timeout=5)
-        m = re.search(r"value='([a-f0-9]+)'", r_setup.text)
+        m = re.search(r"user_token' value='([a-f0-9]+)'", r_setup.text) or re.search(r"value='([a-f0-9]+)'", r_setup.text)
         if m:
             s.post(f"{target}/setup.php", data={
                 "create_db": "Create / Reset Database",
                 "user_token": m.group(1),
             }, timeout=10)
 
-        # Login admin / password
+        # 2. Login admin / password
         r_login_page = s.get(f"{target}/login.php", timeout=5)
-        m_login = re.search(r"value='([a-f0-9]+)'", r_login_page.text)
+        m_login = re.search(r"user_token' value='([a-f0-9]+)'", r_login_page.text) or re.search(r"value='([a-f0-9]+)'", r_login_page.text)
         if m_login:
+            if "PHPSESSID" not in s.cookies:
+                m_sess = re.search(r"PHPSESSID=([a-f0-9]+)", r_login_page.headers.get("Set-Cookie", ""))
+                if m_sess:
+                    s.cookies.set("PHPSESSID", m_sess.group(1))
             s.post(f"{target}/login.php", data={
                 "username": "admin",
                 "password": "password",
                 "Login": "Login",
                 "user_token": m_login.group(1),
-            }, timeout=5)
+            }, timeout=5, allow_redirects=True)
 
-        # Set security level to low
+        # 3. Set security level to low
         r_sec_page = s.get(f"{target}/security.php", timeout=5)
-        m_sec = re.search(r"value='([a-f0-9]+)'", r_sec_page.text)
+        m_sec = re.search(r"user_token' value='([a-f0-9]+)'", r_sec_page.text) or re.search(r"value='([a-f0-9]+)'", r_sec_page.text)
         if m_sec:
             s.post(f"{target}/security.php", data={
                 "security": "low",
                 "seclev_submit": "Submit",
                 "user_token": m_sec.group(1),
             }, timeout=5)
-        return True
+
+        s.cookies.set("security", "low")
+        phpsessid = s.cookies.get("PHPSESSID", "")
+        return {
+            "dvwa_phpsessid": phpsessid,
+            "dvwa_security_cookie": "low",
+        }
     except Exception as e:
         print(f"Warning: Failed to setup DVWA: {e}", file=sys.stderr)
-        return False
+        return {
+            "dvwa_phpsessid": "",
+            "dvwa_security_cookie": "low",
+        }
 
 
 def main():
@@ -199,15 +215,24 @@ def main():
 
     try:
         res = seed_juice_shop(args.target, args.canary, seed_state_path=args.seed_state)
-        seed_dvwa(args.dvwa)
+        dvwa_res = seed_dvwa(args.dvwa)
+        res["dvwa"] = dvwa_res
+
+        if args.seed_state:
+            from pathlib import Path
+            p = Path(args.seed_state)
+            seed_state = json.loads(p.read_text()) if p.exists() else {}
+            seed_state["dvwa_phpsessid"] = dvwa_res.get("dvwa_phpsessid", "")
+            seed_state["dvwa_security_cookie"] = dvwa_res.get("dvwa_security_cookie", "low")
+            p.write_text(json.dumps(seed_state, indent=2))
+            print(f"Seed state written to {args.seed_state}", file=sys.stderr)
+
         out_json = json.dumps(res, indent=2)
         print(out_json)
         if args.out:
             with open(args.out, "w") as f:
                 f.write(out_json)
             print(f"Credentials written to {args.out}", file=sys.stderr)
-        if args.seed_state:
-            print(f"Seed state written to {args.seed_state}", file=sys.stderr)
     except Exception as e:
         print(f"Error seeding lab: {e}", file=sys.stderr)
         sys.exit(1)

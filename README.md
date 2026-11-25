@@ -140,17 +140,17 @@ The benchmark was executed across three independent runs using `qwen2.5-coder:7b
 | Configuration | Confirmed | False Positive | Inconclusive | Precision (%) | Recall (%) | Strict FPRR (%) | Mean Latency |
 | :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | **A: Raw Scanner Baseline** | 20.0 | 0.0 | 0.0 | 30.0 +/- 0.0 | 100.0 +/- 0.0 | 0.0 +/- 0.0 | 0.01s |
-| **B1: Zero-Shot LLM Triage** | 17.0 | 2.7 | 0.3 | 35.3 +/- 0.0 | 100.0 +/- 0.0 | 19.0 +/- 3.4 | 9.06s |
-| **B2: Skeptical CoT Triage** | 0.3 | 19.7 | 0.0 | 33.3 +/- 47.1 | 5.6 +/- 7.9 | 100.0 +/- 0.0 | 16.49s |
-| **C: VeriPoC (Ours)** | 5.0 | 14.0 | 1.0 | 100.0 +/- 0.0 | 83.3 +/- 0.0 | 92.9 +/- 5.8 | 2.99s |
+| **B1: Zero-Shot LLM Triage** | 16.7 | 2.0 | 1.3 | 36.0 +/- 1.0 | 100.0 +/- 0.0 | 14.3 +/- 5.8 | 9.28s |
+| **B2: Skeptical CoT Triage** | 0.0 | 20.0 | 0.0 | 0.0 +/- 0.0 | 0.0 +/- 0.0 | 100.0 +/- 0.0 | 16.14s |
+| **C: VeriPoC (Ours)** | 6.0 | 12.3 | 1.7 | 100.0 +/- 0.0 | 100.0 +/- 0.0 | 88.1 +/- 3.4 | 3.39s |
 
 *Note on Strict FPRR*: Strict False-Positive Reduction Rate gives zero reduction credit to unresolved or inconclusive cases, calculated as `Strict FPRR = Verified_False_Positives / Total_Ground_Truth_Negatives`. Inconclusive cases are never counted as eliminated false positives.
 
 ### Config C Self-Correction Convergence Distribution
 Across findings evaluated by VeriPoC:
-- **Attempt 1 (First-Pass Execution)**: 80.0% of findings resolved decisively on the initial script.
-- **Attempt 2 (Self-Correction on Feedback)**: 15.0% of findings resolved after receiving sandbox error logs and refining payload logic.
-- **Attempt 3 (Final Iteration)**: 5.0% of findings required a second correction cycle before terminal oracle decision.
+- **Attempt 1 (First-Pass Execution)**: 70.0% of findings resolved decisively on the initial script.
+- **Attempt 2 (Self-Correction on Feedback)**: 20.0% of findings resolved after receiving sandbox error logs and refining payload logic.
+- **Attempt 3 (Final Iteration)**: 10.0% of findings required a second correction cycle before terminal oracle decision.
 
 ### INCONCLUSIVE Failure-Mode Taxonomy
 When verification does not reach a decisive proof within 3 attempts, findings are categorized into a structured failure taxonomy:

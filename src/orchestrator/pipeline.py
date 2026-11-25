@@ -43,6 +43,10 @@ class Orchestrator:
                     self.env["VICTIM_BASKET_ID"] = str(state["victim_basket_id"])
                 if "victim_address_id" in state and "VICTIM_ADDRESS_ID" not in self.env:
                     self.env["VICTIM_ADDRESS_ID"] = str(state["victim_address_id"])
+                if "dvwa_phpsessid" in state and "DVWA_PHPSESSID" not in self.env:
+                    self.env["DVWA_PHPSESSID"] = str(state["dvwa_phpsessid"])
+                if "dvwa_security_cookie" in state and "DVWA_SECURITY_COOKIE" not in self.env:
+                    self.env["DVWA_SECURITY_COOKIE"] = str(state["dvwa_security_cookie"])
             except Exception:
                 pass
 
@@ -58,6 +62,21 @@ class Orchestrator:
         row = upsert_finding(self.session, f)
         history: list[Attempt] = []
         verdict, reason = Verdict.INCONCLUSIVE, "no valid telemetry"
+
+        # Per-target auth and base URL switch
+        from urllib.parse import urlparse
+        run_env = dict(self.env)
+        u = urlparse(f.url)
+        if u.scheme and u.netloc:
+            run_env["TARGET_URL"] = f"{u.scheme}://{u.netloc}"
+
+        is_dvwa = "dvwa" in f.url.lower() or f.db_engine == "mysql"
+        if is_dvwa:
+            if "DVWA_PHPSESSID" in self.env:
+                run_env["DVWA_PHPSESSID"] = self.env["DVWA_PHPSESSID"]
+            if "DVWA_SECURITY_COOKIE" in self.env:
+                run_env["DVWA_SECURITY_COOKIE"] = self.env["DVWA_SECURITY_COOKIE"]
+
         for n in range(1, self.max_attempts + 1):
             tokens_before = getattr(getattr(self.engine, "llm", None), "tokens_used", 0)
             script = self.engine.generate(f, history)
@@ -65,9 +84,9 @@ class Orchestrator:
             tokens = max(0, tokens_after - tokens_before)
 
             try:
-                res = self.sandbox.run(script, env=self.env, vuln_class=f.vuln_class)
+                res = self.sandbox.run(script, env=run_env, vuln_class=f.vuln_class)
             except TypeError:
-                res = self.sandbox.run(script, env=self.env)
+                res = self.sandbox.run(script, env=run_env)
             a = Attempt(n, script, res.exit_code, res.stdout, res.stderr, res.duration_s, tokens=tokens)
             tel = parse_telemetry(res.stdout) if res.exit_code == 0 else None
             if tel is not None:

@@ -7,7 +7,7 @@ SYSTEM = """You write a SINGLE self-contained Python 3 script (stdlib + requests
 tests whether ONE reported vulnerability is real, against the lab target only.
 Rules:
 1. Always include explicit required imports: 'import os, sys, json, requests' (plus 'import uuid' for SSRF, or 'from playwright.sync_api import sync_playwright' for XSS). Never omit 'import json'.
-2. Read TARGET_URL, AUTH_TOKEN, CANARY_URL, VICTIM_BASKET_ID, VICTIM_ADDRESS_ID from os.environ. When making requests, use f"{TARGET_URL}{path}" (or the finding's target URL); do not make requests to bare TARGET_URL if the finding has an endpoint path.
+2. Read TARGET_URL, AUTH_TOKEN, CANARY_URL, VICTIM_BASKET_ID, VICTIM_ADDRESS_ID, DVWA_PHPSESSID, DVWA_SECURITY_COOKIE from os.environ. When making requests, use f"{TARGET_URL}{path}" (or the finding's target URL); do not make requests to bare TARGET_URL if the finding has an endpoint path.
 3. Make requests only to the lab target (and CANARY_URL if testing SSRF callback).
 4. Keep runtime under 25 seconds; never loop forever.
 5. As the LAST stdout line, print exactly one JSON object following the telemetry contract.
@@ -16,10 +16,16 @@ Output ONLY the code in one ```python block."""
 
 def get_contract(f: Finding) -> str:
     if f.vuln_class == VulnClass.SQLI:
-        if f.db_engine == "mysql":
+        if f.db_engine == "mysql" or "dvwa" in f.url.lower():
             return (
                 'completed(bool), baseline_ms(list of >=2 ints), payload_ms(list of >=2 ints), delay_s(int) '
-                '[For MySQL target: use time-based injection e.g. SLEEP(delay_s), measure baseline_ms and payload_ms across >=2 trials, set delay_s. '
+                '[For MySQL/DVWA target: use time-based injection with SLEEP(delay_s). '
+                'Authenticate using cookies={"PHPSESSID": os.environ.get("DVWA_PHPSESSID", ""), "security": os.environ.get("DVWA_SECURITY_COOKIE", "low")} '
+                '(do NOT use Authorization header). '
+                'Send GET request to f"{TARGET_URL}{f.path}" with params={"id": "1", "Submit": "Submit"} for baseline, '
+                'and params={"id": f"1\' AND SLEEP({delay_s})#", "Submit": "Submit"} for payload. '
+                'Measure baseline_ms and payload_ms across >=2 trials with delay_s=3. '
+                'Set completed=True (wrapped in try/except); print json {"completed": completed, "baseline_ms": baseline_ms, "payload_ms": payload_ms, "delay_s": delay_s}. '
                 'Oracle confirms if payload_ms is consistently slower by >= 0.8*delay]'
             )
         elif "login" in f.path.lower() or "auth" in f.path.lower() or f.method == "POST":
