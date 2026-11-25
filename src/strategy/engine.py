@@ -22,6 +22,18 @@ def get_contract(f: Finding) -> str:
                 '[For MySQL target: use time-based injection e.g. SLEEP(delay_s), measure baseline_ms and payload_ms across >=2 trials, set delay_s. '
                 'Oracle confirms if payload_ms is consistently slower by >= 0.8*delay]'
             )
+        elif "login" in f.path.lower() or "auth" in f.path.lower() or f.method == "POST":
+            param_name = f.param or "email"
+            return (
+                'completed(bool), diff_observed(bool), true_status(int), false_status(int) '
+                f'[For auth/login or POST SQL injection on SQLite: SQLite has no SLEEP() and UNION extraction does not bypass authentication. '
+                f'Use boolean-based blind SQL injection: '
+                f'1) Send {f.method} request to f"{{TARGET_URL}}{f.path}" with a TRUE condition payload in "{param_name}" (e.g. "\' OR 1=1 --" with dummy password), record true_status = response.status_code and true_body = response.text. '
+                f'2) Send {f.method} request with a FALSE condition payload in "{param_name}" (e.g. "\' OR 1=2 --" with dummy password), record false_status = response.status_code and false_body = response.text. '
+                f'Wrap requests in try/except; set completed = True once HTTP requests were sent. '
+                f'Set diff_observed = (true_status != false_status or (true_status == 200 and false_status != 200) or ("token" in true_body and "token" not in false_body)). '
+                f'Print JSON {{"completed": completed, "diff_observed": diff_observed, "true_status": true_status, "false_status": false_status}}]'
+            )
         else:
             param_name = f.param or "q"
             return (
@@ -70,7 +82,7 @@ def get_contract(f: Finding) -> str:
 CONTRACTS = {
     VulnClass.SQLI: (
         'completed(bool), body(str), baseline_ms(list of >=2 ints), payload_ms(list of >=2 ints), delay_s(int) '
-        '[For SQLite targets: use UNION SELECT to extract canary into body. For MySQL: use SLEEP(delay_s) timing]'
+        '[For SQLite targets: use UNION SELECT to extract canary into body, or boolean differential for auth/POST. For MySQL: use SLEEP(delay_s) timing]'
     ),
     VulnClass.XSS: 'completed(bool), xss_fired(bool) [use sync playwright with headless Chromium; test dialog event]',
     VulnClass.SSRF: 'completed(bool), token(str uuid4) [send callback token to canary listener]',
@@ -111,5 +123,5 @@ class StrategyEngine:
         contract = get_contract(f)
         user = USER_T.render(f=f, contract=contract, history=history)
         text = self.llm.complete(SYSTEM, user)
-        m = re.search(r"```(?:python)?\n(.*?)```", text, re.S)
-        return (m.group(1) if m else text).strip()
+        matches = re.findall(r"```(?:python)?\n(.*?)```", text, re.S)
+        return (matches[-1] if matches else text).strip()

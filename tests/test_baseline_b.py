@@ -1,6 +1,6 @@
 import json
 from src.ingestion.schema import Finding, VulnClass, Verdict
-from src.reporting.baseline_b import LLMTriage, parse_triage_response
+from src.reporting.baseline_b import LLMTriage, SkepticalCoTTriage, parse_triage_response, parse_triage_response_full
 from src.reporting.metrics import compare
 
 
@@ -47,6 +47,27 @@ def test_baseline_b_triage():
     assert v == Verdict.CONFIRMED
     assert "concatenation" in reason
     assert tokens == 120
+
+
+def test_skeptical_cot_triage():
+    f = Finding(
+        source="zap",
+        rule_id="40012",
+        url="http://target/#/contact?name=test",
+        param="name",
+        cwe=79,
+        vuln_class=VulnClass.XSS,
+    )
+    llm = MockTriageLLM(
+        '{"reasoning": "Angular SPA context-encodes values in template bindings.", "verdict": "FALSE_POSITIVE", "reason": "client sanitization disarms script"}',
+        tokens=250,
+    )
+    triage = SkepticalCoTTriage(llm)
+    results = triage.triage_all([f])
+    assert len(results) == 1
+    assert results[0]["verdict"] == "FALSE_POSITIVE"
+    assert "Angular SPA" in results[0]["reasoning"]
+    assert results[0]["tokens"] == 250
 
 
 def test_baseline_b_ablation_metrics():

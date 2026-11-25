@@ -10,7 +10,7 @@
     "vuln_class": "sqli",
     "raw_evidence": {
       "evidence": "HTTP/1.1 500 Internal Server Error",
-      "alert": "SQL Injection"
+      "alert": "SQL Injection in SQLite product search"
     }
   },
   {
@@ -24,7 +24,7 @@
     "vuln_class": "xss",
     "raw_evidence": {
       "evidence": "<script>",
-      "alert": "Cross Site Scripting (DOM Based)"
+      "alert": "Cross Site Scripting (DOM Based) on Search Route"
     }
   },
   {
@@ -57,7 +57,35 @@
   },
   {
     "source": "zap",
-    "rule_id": "40018",
+    "rule_id": "40018-login",
+    "severity": "high",
+    "url": "http://juiceshop:3000/rest/user/login",
+    "method": "POST",
+    "param": "email",
+    "cwe": 89,
+    "vuln_class": "sqli",
+    "raw_evidence": {
+      "evidence": "HTTP/1.1 200 OK - Token Returned",
+      "alert": "SQL Injection in Login Authentication"
+    }
+  },
+  {
+    "source": "zap",
+    "rule_id": "40018-dvwa",
+    "severity": "high",
+    "url": "http://dvwa:80/vulnerabilities/sqli_blind/?id=1",
+    "method": "GET",
+    "param": "id",
+    "cwe": 89,
+    "vuln_class": "sqli",
+    "raw_evidence": {
+      "evidence": "MySQL SLEEP time delay response",
+      "alert": "Blind SQL Injection in DVWA"
+    }
+  },
+  {
+    "source": "zap",
+    "rule_id": "40018-feedbacks",
     "severity": "high",
     "url": "http://juiceshop:3000/api/Feedbacks?comment=test",
     "method": "GET",
@@ -71,7 +99,7 @@
   },
   {
     "source": "zap",
-    "rule_id": "40012",
+    "rule_id": "40012-contact",
     "severity": "high",
     "url": "http://juiceshop:3000/#/contact?name=test",
     "method": "GET",
@@ -99,7 +127,7 @@
   },
   {
     "source": "zap",
-    "rule_id": "idor-address",
+    "rule_id": "idor-address-7",
     "severity": "high",
     "url": "http://juiceshop:3000/api/Addresss/7",
     "method": "GET",
@@ -109,6 +137,146 @@
     "raw_evidence": {
       "evidence": "HTTP/1.1 200 OK",
       "alert": "Insecure Direct Object Reference (IDOR) on Address"
+    }
+  },
+  {
+    "source": "zap",
+    "rule_id": "40018-users",
+    "severity": "high",
+    "url": "http://juiceshop:3000/api/Users",
+    "method": "POST",
+    "param": "email",
+    "cwe": 89,
+    "vuln_class": "sqli",
+    "raw_evidence": {
+      "evidence": "HTTP/1.1 201 Created",
+      "alert": "SQL Injection in User Registration"
+    }
+  },
+  {
+    "source": "zap",
+    "rule_id": "40018-basketitems",
+    "severity": "high",
+    "url": "http://juiceshop:3000/api/BasketItems",
+    "method": "GET",
+    "param": "id",
+    "cwe": 89,
+    "vuln_class": "sqli",
+    "raw_evidence": {
+      "evidence": "HTTP/1.1 200 OK",
+      "alert": "SQL Injection in Basket Items"
+    }
+  },
+  {
+    "source": "zap",
+    "rule_id": "40018-pass",
+    "severity": "high",
+    "url": "http://juiceshop:3000/rest/user/login",
+    "method": "POST",
+    "param": "password",
+    "cwe": 89,
+    "vuln_class": "sqli",
+    "raw_evidence": {
+      "evidence": "HTTP/1.1 401 Unauthorized",
+      "alert": "SQL Injection in Login Password Field"
+    }
+  },
+  {
+    "source": "zap",
+    "rule_id": "idor-address-8",
+    "severity": "high",
+    "url": "http://juiceshop:3000/api/Addresss/8",
+    "method": "GET",
+    "param": "id",
+    "cwe": 639,
+    "vuln_class": "idor",
+    "raw_evidence": {
+      "evidence": "HTTP/1.1 200 OK",
+      "alert": "IDOR on Address Resource 8"
+    }
+  },
+  {
+    "source": "zap",
+    "rule_id": "40012-privacy",
+    "severity": "high",
+    "url": "http://juiceshop:3000/#/privacy-security",
+    "method": "GET",
+    "param": "privacy",
+    "cwe": 79,
+    "vuln_class": "xss",
+    "raw_evidence": {
+      "evidence": "<script>alert(1)</script>",
+      "alert": "Cross-Site Scripting on Privacy Policy Route"
+    }
+  },
+  {
+    "source": "nuclei",
+    "rule_id": "ssrf-saveloginip",
+    "severity": "high",
+    "url": "http://juiceshop:3000/rest/saveLoginIp",
+    "method": "POST",
+    "param": "ip",
+    "cwe": 918,
+    "vuln_class": "ssrf",
+    "raw_evidence": {
+      "evidence": "HTTP/1.1 200 OK",
+      "alert": "SSRF Header Reflection in saveLoginIp"
+    }
+  },
+  {
+    "source": "zap",
+    "rule_id": "40018-admin-appver",
+    "severity": "high",
+    "url": "http://juiceshop:3000/rest/admin/application-version",
+    "method": "GET",
+    "param": "query",
+    "cwe": 89,
+    "vuln_class": "sqli",
+    "raw_evidence": {
+      "evidence": "HTTP/1.1 403 Forbidden",
+      "alert": "SQL Injection in Admin Application Version"
+    }
+  },
+  {
+    "source": "zap",
+    "rule_id": "idor-checkout-coupon",
+    "severity": "high",
+    "url": "http://juiceshop:3000/rest/order/checkout",
+    "method": "POST",
+    "param": "coupon",
+    "cwe": 639,
+    "vuln_class": "idor",
+    "raw_evidence": {
+      "evidence": "HTTP/1.1 400 Bad Request",
+      "alert": "IDOR in Order Checkout Flow"
+    }
+  },
+  {
+    "source": "zap",
+    "rule_id": "40012-photowall",
+    "severity": "high",
+    "url": "http://juiceshop:3000/#/photo-wall",
+    "method": "GET",
+    "param": "filter",
+    "cwe": 79,
+    "vuln_class": "xss",
+    "raw_evidence": {
+      "evidence": "<img src=x onerror=alert(1)>",
+      "alert": "DOM XSS in Client Photo Wall Filter"
+    }
+  },
+  {
+    "source": "nuclei",
+    "rule_id": "ssrf-quantity-sync",
+    "severity": "high",
+    "url": "http://juiceshop:3000/api/Quantitys",
+    "method": "POST",
+    "param": "warehouseUrl",
+    "cwe": 918,
+    "vuln_class": "ssrf",
+    "raw_evidence": {
+      "evidence": "HTTP/1.1 500 Internal Server Error",
+      "alert": "Blind SSRF in Warehouse Inventory Sync"
     }
   }
 ]

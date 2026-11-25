@@ -33,6 +33,15 @@ def test_sqli_time_oracle():
     assert evaluate(F(89), {"completed": False}, OracleContext()).verdict == Verdict.INCONCLUSIVE
 
 
+def test_sqli_boolean_oracle():
+    diff_ok = {"completed": True, "diff_observed": True, "true_status": 200, "false_status": 401}
+    diff_no = {"completed": True, "diff_observed": False, "true_status": 401, "false_status": 401}
+    diff_body = {"completed": True, "true_body": '{"token": "xyz"}', "false_body": "Invalid password"}
+    assert evaluate(F(89), diff_ok, OracleContext()).verdict == Verdict.CONFIRMED
+    assert evaluate(F(89), diff_body, OracleContext()).verdict == Verdict.CONFIRMED
+    assert evaluate(F(89), diff_no, OracleContext()).verdict == Verdict.FALSE_POSITIVE
+
+
 def test_ssrf_idor_xss():
     assert evaluate(F(918), {"completed": True, "token": "abc"},
                     OracleContext(canary_hits=[{"path": "/abc"}])).verdict == Verdict.CONFIRMED

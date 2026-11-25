@@ -1,6 +1,7 @@
 import csv
 from pathlib import Path
 from src.reporting.taxonomy import FailureMode, classify_failure, classify_finding_failure
+from src.reporting.metrics import FailureModeTaxonomy, compare
 from src.reporting.exporter import export_results_csv, generate_plots
 
 
@@ -97,7 +98,71 @@ def test_generate_plots(tmp_path):
     assert "comparison" in charts
     assert "cost_vs_latency" in charts
     assert "failure_taxonomy" in charts
-
     for name, path in charts.items():
         assert Path(path).exists()
         assert Path(path).stat().st_size > 0
+
+
+def test_failure_mode_taxonomy():
+    results = [
+        {
+            "key": ["/api/test1", "p", 89],
+            "verdict": "INCONCLUSIVE",
+            "reason": "timed out after 30s",
+            "history": [{"exit_code": -1, "stdout": "", "stderr": "Execution timed out", "duration_s": 30.0}],
+        },
+        {
+            "key": ["/api/test2", "p", 79],
+            "verdict": "INCONCLUSIVE",
+            "reason": "no valid telemetry",
+            "history": [{"exit_code": 1, "stdout": "", "stderr": "SyntaxError: invalid syntax", "duration_s": 1.0}],
+        },
+        {
+            "key": ["/api/test3", "p", 639],
+            "verdict": "INCONCLUSIVE",
+            "reason": "unauthorized 401",
+            "history": [{"exit_code": 0, "stdout": "401 Unauthorized", "stderr": "", "duration_s": 0.5}],
+        },
+        {
+            "key": ["/api/test4", "p", 89],
+            "verdict": "CONFIRMED",
+            "reason": "payload executed",
+            "history": [{"exit_code": 0, "stdout": '{"completed": true}', "stderr": "", "duration_s": 1.0}],
+        },
+    ]
+
+    agg = FailureModeTaxonomy.aggregate_from_results(results)
+    assert agg["total_inconclusive"] == 3
+    assert agg["counts"][FailureModeTaxonomy.TIMEOUT] == 1
+    assert agg["counts"][FailureModeTaxonomy.SYNTAX_OR_RUNTIME_ERROR] == 1
+    assert agg["counts"][FailureModeTaxonomy.AUTH_FAILURE] == 1
+
+
+def test_compare_with_b2():
+    truth = {
+        ("/a", "q", 89): True,
+        ("/b", "q", 89): False,
+        ("/c", "p", 79): False,
+    }
+    raw_keys = set(truth.keys())
+    ver_confirmed = {("/a", "q", 89)}
+    ver_verdicts = {("/a", "q", 89): "CONFIRMED", ("/b", "q", 89): "FALSE_POSITIVE", ("/c", "p", 79): "FALSE_POSITIVE"}
+    b1_confirmed = {("/a", "q", 89), ("/b", "q", 89), ("/c", "p", 79)}
+    b2_confirmed = {("/a", "q", 89), ("/b", "q", 89)}
+    b2_verdicts = {("/a", "q", 89): "CONFIRMED", ("/b", "q", 89): "CONFIRMED", ("/c", "p", 79): "FALSE_POSITIVE"}
+
+    m = compare(
+        raw_keys,
+        ver_confirmed,
+        truth,
+        llm_confirmed=b1_confirmed,
+        verified_verdicts=ver_verdicts,
+        b2_confirmed=b2_confirmed,
+        b2_verdicts=b2_verdicts,
+    )
+    assert m["raw"]["precision"] == 1 / 3
+    assert m["verified"]["precision"] == 1.0
+    assert m["strict_FPRR_%"] == 100.0
+    assert "llm_cot" in m
+    assert m["llm_cot"]["precision"] == 0.5
+    assert m["strict_FPRR_cot_%"] == 50.0

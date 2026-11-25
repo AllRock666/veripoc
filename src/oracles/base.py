@@ -37,9 +37,22 @@ def sqli_oracle(f, t, ctx) -> OracleResult:
         if all(p - b >= 0.8 * delay for p in pay):
             return OracleResult(Verdict.CONFIRMED, f"payload consistently slower by >= {0.8*delay:.0f}ms")
         return OracleResult(Verdict.FALSE_POSITIVE, "no timing delta across repeated trials")
+    # Technique 3: Boolean-based blind injection / differential response
+    if "diff_observed" in t or "true_status" in t or "true_body" in t:
+        diff = t.get("diff_observed")
+        true_st = t.get("true_status")
+        false_st = t.get("false_status")
+        true_body = str(t.get("true_body", ""))
+        false_body = str(t.get("false_body", ""))
+        if diff is True or (true_st is not None and false_st is not None and true_st != false_st):
+            return OracleResult(Verdict.CONFIRMED, "differential response between true and false boolean conditions")
+        if true_body and false_body and true_body != false_body and ("token" in true_body or len(true_body) != len(false_body)):
+            return OracleResult(Verdict.CONFIRMED, "differential response body between true and false boolean conditions")
+        if diff is False or (true_st is not None and false_st is not None and true_st == false_st):
+            return OracleResult(Verdict.FALSE_POSITIVE, "no differential behavior between true and false conditions")
     if ctx.canary_value and "body" in t:
         return OracleResult(Verdict.FALSE_POSITIVE, "seeded canary not extracted")
-    return OracleResult(Verdict.INCONCLUSIVE, "insufficient timing samples")
+    return OracleResult(Verdict.INCONCLUSIVE, "insufficient timing or differential samples")
 
 
 def xss_oracle(f, t, ctx) -> OracleResult:

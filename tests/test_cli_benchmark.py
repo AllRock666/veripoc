@@ -45,13 +45,14 @@ def test_cli_benchmark_e2e(tmp_path):
          patch("src.sandbox.runner.SandboxRunner.run") as mock_run:
 
         # Mock LLM completions:
-        # First 2 calls: Baseline B triage
-        # Call 1 (finding 0): Confirms SQLi
-        # Call 2 (finding 1): False Positive
-        # Next calls: Strategy engine script generations for finding 0 and finding 1
+        # First 2 calls: Baseline B1 triage (finding 0: Confirms, finding 1: False Positive)
+        # Next 2 calls: Baseline B2 skeptical triage (finding 0: Confirms, finding 1: False Positive)
+        # Next 2 calls: Strategy engine script generations for finding 0 and finding 1
         mock_complete.side_effect = [
             '{"verdict": "CONFIRMED", "reason": "SQL syntax injection evident"}',
             '{"verdict": "FALSE_POSITIVE", "reason": "Properly parameterized"}',
+            '{"reasoning": "Direct SQL error indicates unparameterized query.", "verdict": "CONFIRMED", "reason": "SQL syntax injection evident"}',
+            '{"reasoning": "Sequelize ORM parameterizes user registration.", "verdict": "FALSE_POSITIVE", "reason": "Properly parameterized"}',
             "```python\nprint('poc1')\n```",
             "```python\nprint('poc2')\n```",
         ]
@@ -96,18 +97,21 @@ def test_cli_benchmark_e2e(tmp_path):
         assert result.exit_code == 0
         assert "ABLATION BENCHMARK RESULTS" in result.stdout
         assert "A: Raw Scanner" in result.stdout
-        assert "B: LLM-Only" in result.stdout
-        assert "C: PoC Verifier (Ours)" in result.stdout
+        assert "B1: Zero-Shot LLM" in result.stdout
+        assert "B2: Skeptical CoT" in result.stdout
+        assert "C: VeriPoC (Ours)" in result.stdout
 
         # Verify output artifacts
         assert (out_dir / "benchmark_metrics.json").exists()
-        assert (out_dir / "baseline_b_triage.json").exists()
+        assert (out_dir / "run_metadata.json").exists()
+        assert (out_dir / "baseline_b1_triage.json").exists()
+        assert (out_dir / "baseline_b2_triage.json").exists()
         assert (out_dir / "verified_findings.json").exists()
         assert (out_dir / "findings_summary.csv").exists()
-        assert (out_dir / "precision_recall_fprr.png").exists()
-        assert (out_dir / "cost_vs_latency.png").exists()
+        assert (out_dir / "triage_report.md").exists()
+        assert (out_dir / "charts" / "ablation_metrics.png").exists()
 
         metrics = json.loads((out_dir / "benchmark_metrics.json").read_text())
         assert metrics["raw"]["precision"] == 0.5
         assert metrics["verified"]["precision"] == 1.0
-        assert metrics["FPRR_%"] == 100.0
+        assert metrics["strict_FPRR_%"] == 100.0
